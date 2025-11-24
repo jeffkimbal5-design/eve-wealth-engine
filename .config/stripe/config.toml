@@ -1,0 +1,13 @@
+color = ''
+project-name = 'default'
+
+[default]
+account_id = 'acct_1ROhpSJ7IANrKQiv'
+device_name = 'penguin'
+display_name = 'Autofund Systems, LLC or Kimbal AI Ventures.'
+live_mode_api_key = 'rk_live_***********************************************************************************************LBmb'
+live_mode_key_expires_at = '2026-02-22'
+live_mode_pub_key = 'pk_live_51ROhpSJ7IANrKQivYfdMdDlfeQIBRvV38DNjFzIBVwqkq8uy3QdmMxu8irUFoNN2SnwsF4EPbLv3BNUsboe79TbL00gUttwFuF'
+test_mode_api_key = 'sk_test_51ROhpSJ7IANrKQivGUVRPDB9d2Hwt1L3PSt34Bo0Mi1dt3wG5Ks4XxRc8f0gA0ecI4oEmigpNomFuuUmfPgYLZMb00dAnhH6TP'
+test_mode_key_expires_at = '2026-02-22'
+test_mode_pub_key = 'pk_test_51ROhpSJ7IANrKQiv0ObzYegG4MX8BdoJvXRdB9lBJcIHkmiHphUqUBqi8bv39dpy06ALob5HoGPWAXDhVCY4PzIs005MfQ0i1b'
