@@ -1,0 +1,13 @@
+{
+  "name": "eve-wealth-engine",
+  "version": "1.0.0",
+  "description": "EVE Wealth Engine - Financial service platform",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Build completed'",
+    "dev": "echo 'Dev mode'"
+  },
+  "dependencies": {
+    "@vercel/speed-insights": "^1.0.0"
+  }
+}

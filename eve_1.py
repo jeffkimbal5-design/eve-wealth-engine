@@ -51,6 +51,10 @@ HTML_TEMPLATE = """
         
         <a href="{{ link }}" class="button">INITIATE TRANSFER</a>
     </div>
+    <script type="module">
+        import { injectSpeedInsights } from '/_vercel/speed-insights/script.js';
+        injectSpeedInsights();
+    </script>
 </body>
 </html>
 """
