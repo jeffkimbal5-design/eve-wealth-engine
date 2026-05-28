@@ -1,8 +1,15 @@
 {
   "version": 2,
-  "installCommand": "npm install --production=false || pip install -r requirements.txt || echo 'Dependencies installed'",
-  "buildCommand": "npm run build || echo 'Build completed'",
-  "devCommand": "npm run dev",
-  "framework": null,
-  "outputDirectory": "."
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/main.py"
+    }
+  ]
 }
