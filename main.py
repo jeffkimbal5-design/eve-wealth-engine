@@ -1,105 +1,99 @@
 import os
-import stripe
-from fastapi import FastAPI, HTTPException, Request, Header
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from dotenv import load_dotenv
-
-# Load Keys
-load_dotenv()
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 app = FastAPI()
 
-# Vault Access
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
-PRICING_TABLE = {
-    "pro_monthly": os.getenv("PRO_PRICE_ID"),
-    "business_seat": os.getenv("BUSINESS_PRICE_ID")
-}
+# Prefer env; fallback is your existing Stripe Payment Link from eve_1.py
+PAYMENT_LINK = os.getenv(
+    "STRIPE_PAYMENT_LINK",
+    "https://buy.stripe.com/aFa6oI1cj2RVbZEbkN77O08",
+).strip()
 
-class CheckoutRequest(BaseModel):
-    user_id: str
-    plan_type: str
+PRICE_LABEL = os.getenv("PRICE_LABEL", "$10.00 ACCESS")
 
-# THE GOLD FACE
-html_content = """
-<!DOCTYPE html>
+
+def page(body: str, title: str = "EVE WEALTH GATE") -> str:
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVE WEALTH GATE</title>
-    <style>
-        body { background-color: #000; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; }
-        .pulse-button {
-            width: 200px; height: 200px; border-radius: 50%; 
-            background-color: #FFD700; /* PURE GOLD */
-            border: 5px solid #C5A000;
-            cursor: pointer; 
-            box-shadow: 0 0 50px #FFD700;
-            animation: pulse 2s infinite;
-            display: flex; align-items: center; justify-content: center;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 20px 20px rgba(255, 215, 0, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
-        }
-        .pupil { width: 60px; height: 60px; background: black; border-radius: 50%; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <style>
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #000; color: #fff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }}
+    .wrap {{ text-align: center; padding: 2rem; max-width: 28rem; }}
+    h1 {{ letter-spacing: 0.2em; font-size: 1.25rem; margin: 0 0 1.5rem; color: #FFD700; }}
+    .price {{ font-size: 1.75rem; margin: 0 0 2rem; }}
+    .btn {{
+      display: inline-block; text-decoration: none; color: #000; background: #FFD700;
+      border: 3px solid #C5A000; padding: 1rem 2rem; font-weight: 700; font-size: 1.1rem;
+      border-radius: 999px; box-shadow: 0 0 40px rgba(255, 215, 0, 0.45);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }}
+    .btn:hover {{ transform: scale(1.04); box-shadow: 0 0 60px rgba(255, 215, 0, 0.7); }}
+    .sub {{ color: #888; margin-top: 1.5rem; font-size: 0.85rem; }}
+    .eye {{
+      width: 140px; height: 140px; border-radius: 50%; background: #FFD700; border: 5px solid #C5A000;
+      margin: 0 auto 1.75rem; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 50px #FFD700; animation: pulse 2s infinite;
+    }}
+    .pupil {{ width: 42px; height: 42px; border-radius: 50%; background: #000; }}
+    @keyframes pulse {{
+      0% {{ transform: scale(0.96); }}
+      70% {{ transform: scale(1.04); }}
+      100% {{ transform: scale(0.96); }}
+    }}
+  </style>
 </head>
 <body>
-    <h1 id="status">EVE IS ONLINE</h1>
-    <br>
-    <button class="pulse-button" id="goldBtn"><div class="pupil"></div></button>
-    <script>
-        const btn = document.getElementById('goldBtn');
-        const status = document.getElementById('status');
-        btn.addEventListener('click', async () => {
-            status.innerText = "PROCESSING...";
-            status.style.color = "#FFD700";
-            try {
-                const res = await fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({user_id: 'father', plan_type: 'pro_monthly'})
-                });
-                const data = await res.json();
-                if(data.checkoutUrl) window.location.href = data.checkoutUrl;
-                else status.innerText = "ERROR: " + JSON.stringify(data);
-            } catch(e) { status.innerText = "CONNECTION FAILED"; }
-        });
-    </script>
+  <div class="wrap">{body}</div>
 </body>
-</html>
-"""
+</html>"""
+
 
 @app.get("/", response_class=HTMLResponse)
-async def read_root():
-    return html_content
-
-@app.post("/create-checkout-session")
-async def create_checkout_session(request: CheckoutRequest):
-    try:
-        price_id = PRICING_TABLE.get(request.plan_type)
-        if not price_id: raise HTTPException(status_code=400, detail="Check .env Price ID")
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{'price': price_id, 'quantity': 1}],
-            mode='subscription',
-            success_url='https://google.com',
-            cancel_url='https://google.com',
+async def home():
+    if not PAYMENT_LINK:
+        return HTMLResponse(
+            page(
+                "<h1>EVE WEALTH GATE</h1>"
+                "<p class='price'>Payment link not configured</p>"
+                "<p class='sub'>Set STRIPE_PAYMENT_LINK in Vercel env.</p>"
+            ),
+            status_code=503,
         )
-        return {"checkoutUrl": session.url}
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=400, detail=str(e))
+    body = f"""
+    <div class="eye"><div class="pupil"></div></div>
+    <h1>EVE IS ONLINE</h1>
+    <p class="price">{PRICE_LABEL}</p>
+    <a class="btn" href="/pay">PAY NOW</a>
+    <p class="sub">Secure checkout powered by Stripe</p>
+    """
+    return HTMLResponse(page(body))
 
-@app.post("/webhook")
-async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
-    payload = await request.body()
-    try:
-        event = stripe.Webhook.construct_event(payload, stripe_signature, webhook_secret)
-    except: raise HTTPException(status_code=400)
-    return {"status": "success"}
+
+@app.get("/pay")
+async def pay():
+    if not PAYMENT_LINK:
+        return HTMLResponse(page("<h1>Unavailable</h1><p class='sub'>No payment link configured.</p>"), status_code=503)
+    return RedirectResponse(url=PAYMENT_LINK, status_code=302)
+
+
+@app.get("/success", response_class=HTMLResponse)
+async def success():
+    body = """
+    <h1>PAYMENT RECEIVED</h1>
+    <p class="price">Thank you.</p>
+    <p class="sub">EVE WEALTH GATE</p>
+    """
+    return HTMLResponse(page(body, title="Payment success"))
+
+
+@app.get("/health")
+async def health():
+    return {"ok": True, "payments_configured": bool(PAYMENT_LINK)}
